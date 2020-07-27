@@ -23,4 +23,4 @@ contains code to make the following graphs:
 
 ![alt text](https://github.com/c-maine/data_visualisation/blob/master/images/Rplot_5.png)
 
-## 2. [GGplot simple graph examples](https://github.com/c-maine/data_visualisation/blob/master/ggplot_simple_examples.ipynb) 
+## 2. [Simple GGplot examples](https://github.com/c-maine/data_visualisation/blob/master/ggplot_simple_examples.ipynb) 
