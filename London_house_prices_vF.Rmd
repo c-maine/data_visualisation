@@ -1,0 +1,318 @@
+# London House Price visualisations
+#This notebook contains visualisations relating to London House prices including maps created using a GeoJSON file
+
+## Install packages
+install.packages("rgdal")
+install.packages("leaflet")
+install.packages("geojsonio")
+install.packages("e1071")
+install.packages("shapefiles")
+install.packages("sf")
+install.packages("StatMeasures")
+install.packages("gridExtra")
+install.packages("viridis")
+install.packages("hrbrthemes")
+
+## Load libraries
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(ggridges)
+library(rgdal)
+library(leaflet)
+library("shapefiles")
+library("sf")
+library("StatMeasures")
+library("gridExtra")
+library("lubridate")
+library("viridis")
+library("hrbrthemes")
+
+## Load data
+
+#Read Big ppdata_lite file
+df <- read.csv("/Users/chloemaine/Documents/Chloe/BGSE/data_vis_t2/arapakis/mini_project/ppdata_lite.csv")
+
+#Read UK postocdes
+ postcodes <-  read.csv("/Users/chloemaine/Documents/Chloe/BGSE/data_vis_t2/arapakis/mini_project/ukpostcodes.csv")
+
+#Read UK districts shape polygon file
+ districts <- st_read("/Users/chloemaine/Documents/Chloe/BGSE/data_vis_t2/arapakis/mini_project/Distribution/Districts.shx")
+
+## Data pre-processing
+
+#Filter data to Greater london only
+col_names <- colnames(df)
+my_data <- subset.data.frame(df, county == "GREATER LONDON")
+
+#Create df
+my_df = data.frame(nrows = dim(my_data)[1])
+for (col in col_names) {
+  my_df <- cbind(my_df, my_data[col]) }
+
+#Convert price in £ to price in £k  
+my_df$pricex <- my_df$price /1000
+
+## 1: House price box plots of London by borough
+
+#Group by borough
+boroughs <- group_by(my_df, district)
+boroughs_mutated <- boroughs
+
+### 1.a Box plots of price by borough
+ggplot(boroughs_mutated, 
+      aes(x = reorder(district, price, FUN = median),      # Reorder house price medians
+           y = pricex ,
+         group = district)) +
+geom_boxplot(lwd = 0.5,
+             outlier.size = 0.1,
+             fill= " light blue") +        # Change colouring
+stat_boxplot(geom ='errorbar')  +           
+ylim(0,1000) +
+coord_flip() +          # Improve readability of borough
+theme_minimal() +
+xlab("Borough") +
+ylab("Price £k") +
+ggtitle("House price by borough") +
+theme(plot.title = element_text(size = 16, face = "bold")) 
+
+```
+Here I plot the distribution of house prices by borough using a box plot. Key 3 features of this plot are:
+- To improve readability, I have flipped the coordinate axes so that names are visible in the horizontal and plotted house price in £k rather than £
+- Ordering the boroughs by house price median improves the appearance and makes the quartile patterns immediately obvious.
+- Playing with boxplot and gridline colouring yields (what I hope is!) an attractive plot.
+```
+  
+### 1.b. Geom density ridges
+ggplot(boroughs_mutated,
+       aes(x= price_x,
+           y = reorder(district, price, FUN = median),      # As above, reorder medians
+                             fill = stat(x))) +
+geom_density_ridges_gradient(scale = 2,
+                             rel_min_height = 0.01,
+                             quantile_lines=TRUE,
+                             calc_ecdf = TRUE,
+                             quantiles = 2,                 # Add median line to each plot
+                             colour = "white") +            # Vis- appealing white outline
+labs(title = 'House prices by borough') +
+scale_x_continuous(limits = c(0, 750)) +
+xlab("Price £k") +
+ylab("Borough") +
+scale_point_color_hue(l=40) + 
+theme_minimal() +
+theme(legend.position="none",
+      panel.grid.major.x = element_line(colour = "dark blue"),  # Change horiz. gridlines
+      plot.title = element_text(size = 16, face = "bold"))
+
+```
+An alternative way to demonstrate how prices vary by borough in London is through geom_density_ridges, which gives a better idea of the overall density distribution (especially in cases where the data is multi-modal) but is more difficult to see the actual values in a given distribution. Key features of this plot are:
+ - As above, boroughs ordered by their median
+ - The white outline surrounding the ridge, which is visually appealing
+ - Add median line to each ridge (I could have chosen additional quartiles but this looked too fussy)
+  - Navy blue bold vertical gridlines but soft horizontal gridlines to emphasise the price £k values but not overpower the distribution itself on the horizontal axis.
+```
+
+## 2. House price by floor level
+      
+#Select only the properties labeled as flats
+flats <- subset(my_df, my_df$property_type == "F" & !(my_df$SAON == ""))
+
+#Retain only the numeric values of the field SAON
+flats$SAON <- gsub('\\D+','', flats$SAON)
+flats$floor <- as.numeric(flats$SAON)
+flats$price_x <- flats$price /1000
+
+#Assume that there are very few buildings with 15+ floors in London; 
+#Hence recursively remove right hand side number until SAON <= 15 and assume this is floor
+for (i in 1:10) {
+  flats$floor <- ifelse(flats$floor > 15, substr(flats$floor, 1, (nchar(flats$floor)-1)), flats$floor)
+  flats$floor <- as.numeric(flats$floor) }
+
+```
+Prepare data for plotting by flat level
+It was a challenge to extract flat level from SAON. The approach I took was as follows:
+ - Used the provided code to extract the SAON.
+ - Based on my knowledge of London, I know there are relatively few properties > 15 stories tall. I used this fact to apply a recursive function which keeps #removing digits from the SAON from the left hand side until the value is less than #15.
+- I know this will misclassify some flats; for example some flats which are on the first floor will be mis-classified (flat 14 would be incorrectly classified as being on floor 14 for example rather than on floor 1, room 4.) However, these errors would be almost impossible to avoid without manual/much more sophisticated techniques, which is not really the purpose of this data visualisation example ;)
+```
+
+
+ggplot(flats,
+       aes(x=factor(floor),
+       y = price_x))  +
+geom_violin(draw_quantiles = c(0.2, 0.4, 0.6, 0.8),  
+            fill = "brown 2",
+            colour= "navyblue" ) +
+ylim(0,1000) +
+xlab("Floor") +
+ylab("Price £k") +
+theme_classic() + 
+ggtitle("House price by floor") + 
+theme(plot.title = element_text(size = 16, face = "bold"))
+
+
+```
+Here I chose to plot house price by floor using a violin plot. As there do not appear to be significant differences in house price by floor, this plot does not convey a key trend or message. Nonetheless, this information is informative in and of itself.
+```
+
+### Create GeoJSON file
+
+``` 
+Here I create a GeoJSON file. The steps I take are as follows:
+ - Create summary dataframe by postcode showing the max, median, min and mean house prices.
+  - Merge with the postcode file supplied.
+  - Convert to SpatialPointsDataFrame and save as GeoJSON.
+
+I also chose to merge the dataframe with a shape polygon file, which enables the plotting of district boundaries. The reason for doing this is to allow colouring of individual districts rather than just specific points. 
+- This required extracting the district code from the postcode.
+```
+
+## 3. Price by district maps
+
+#Summarise price data by postcode
+geo_df = my_data %>% 
+    group_by(postcode) %>%
+    summarize(price_max = max(price), na.rm = TRUE,
+              price_median = median(price), na.rm = TRUE,
+              price_min = min(price), na.rm = TRUE,
+              price_mean = mean(price), na.rm = TRUE)
+
+#Merge price data with postcode latitude and longitude
+geo_df <- merge(geo_df, postcodes ,by="postcode")
+
+#Geo_df is a dataframe with coordinates on cols 8 (LATITUDE) and 9 (LONGITUDE)
+#Transfer coordinates to numeric
+geo_df$latitude  <- as.numeric(geo_df$latitude)
+geo_df$longitude  <- as.numeric(geo_df$longitude)
+
+
+#Convert to class SpatialPointsDataFrame
+geo_df.SP  <- SpatialPointsDataFrame(geo_df[,c(8,9)], geo_df[,-c(8,9)])
+str(geo_df.SP)
+
+#Write as geojson
+writeOGR(geo_df.SP, 'geo_df.geojson','dataMap', driver='GeoJSON')
+
+#If desired, load as geojson
+#loaded_geo_df <- rgdal::readOGR("/Users/chloemaine/Documents/Chloe/BGSE/data_vis_t2/mini_project/geo_df.geojson")
+
+### Prepare district polygon data for plotting
+
+
+#Prepare summary dataframe containing median, mean, max, min
+#Separate out postcode into district code and local code to enable matching with
+#shape polygon file
+dist_df = df %>% 
+    separate(postcode, c("pc1", "pc2"), sep = " ") %>%
+    group_by(pc1) %>%
+    summarize(price_max = max(price_x), na.rm = FALSE,
+              price_median = median(price_x), na.rm = FALSE,
+              price_min = min(price_x), na.rm = FALSE,
+              price_mean = mean(price_x), na.rm = FALSE) 
+              
+#Calculate which decile of all UK house district house price medians and means
+#each district falls into
+#This allows neat plotting by decile
+med_deciles <- decile(dist_df$price_median)
+mean_deciles <- decile(dist_df$price_mean)
+
+#Bind deciles to df
+dist_df <- cbind(dist_df, med_deciles)
+dist_df <- cbind(dist_df, mean_deciles)
+
+#Merge calculated district code with shape polygon file
+dist_df <- merge(dist_df, districts , by.x = c("pc1"), by.y=c("name"))
+
+
+p1 <- ggplot(dist_df$geometry) +
+      geom_sf(aes(fill = dist_df$med_deciles), 
+              size = 0.0001,
+              color="dark blue") +
+      scale_fill_viridis_c( name = "Decile") +
+      theme_minimal() +
+      theme(legend.title = element_text(colour="black", size=8, face="bold"), 
+            legend.position="bottom",
+            axis.title.x=element_blank(),
+            axis.text.x=element_blank(),
+            axis.ticks.x=element_blank(),
+            axis.title.y=element_blank(),
+            axis.text.y=element_blank(),
+            axis.ticks.y=element_blank(),
+            panel.grid.major = element_blank(),
+            plot.title = element_text(size = 16, face = "bold")) + 
+      ggtitle("Median House Prices \nacross the UK")
+
+p2 <- ggplot(dist_df$geometry) +
+      geom_sf(aes(fill = dist_df$mean_deciles), 
+              size = 0.0001,
+              color="dark blue") +
+      scale_fill_viridis_c(name = "Decile") +
+      theme_minimal() +
+      theme(legend.title = element_text(colour="black", size=8, face="bold"), 
+           legend.position="bottom",
+            axis.title.x=element_blank(),
+            axis.text.x=element_blank(),
+            axis.ticks.x=element_blank(),
+            axis.title.y=element_blank(),
+            axis.text.y=element_blank(),
+            axis.ticks.y=element_blank(),
+            panel.grid.major = element_blank(),
+            plot.title = element_text(size = 16, face = "bold")) +
+      ggtitle("Mean House Prices \nacross the UK")
+
+grid.arrange(p1, p2, nrow = 1)
+
+
+
+```
+Plot median and mean house prices across the UK:
+Here I have chosen ggpplot to show house price maps across the UK.
+- The 2 plots for mean and median show which decile the median and mean house price is in across the UK.
+- Looking at the data, we can see that in comparing regions, the difference in plotting the median and the mean is not so pronounced and is difficult to observe at a district level. However, we would expect mean to be far more affected by large outliers which we see in house prices and therefore to be disproportionately skewed in London. With more time, I would have done further plots to investigate this difference!
+```
+
+#Filter data frame to 2015 only; convert dates to manageable format
+df$date_of_transfer <- as.POSIXlt ( df$date_of_transfer)
+df$year_of_transfer <- year(df$date_of_transfer)
+df_2015 <- subset.data.frame(df, df$year_of_transfer == 2015)
+df_2015$month_of_transfer <- month(df_2015$date_of_transfer)
+
+#Calculate house price deciles per month
+deciles_2015 <- data.frame(nrows=12)
+for (col in 1:13) {
+  temp_df <- subset.data.frame(df_2015, df_2015$month_of_transfer == col)
+  temp_col <- quantile(temp_df$price_x, probs = seq(0,1,0.1), na.rm = TRUE)
+  deciles_2015 <- cbind(deciles_2015, temp_col)
+}
+
+deciles_2015 <- deciles_2015[c(2:13)]
+
+#Rename columns
+colnames(deciles_2015) = list("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+#Convert dataframe to long format for easier plotting 
+plot_df_2015 <- deciles_2015 %>%
+    rownames_to_column %>%
+    gather(col, value, -rowname) %>%
+    map_df(rev)
+
+## 4. Plotting changing house prices by decile over 2015
+ggplot(plot_df_2015,
+       aes(x= col, y= value, group=rowname, colour= rowname)) +
+geom_line()+
+ylim(0, 600) + 
+ggtitle("Changing house prices by decile over 2015") + 
+theme_minimal() +
+theme(legend.title = element_text(colour="black", size=8, face="bold"), 
+      plot.title = element_text(size = 16, face = "bold")) +
+xlab("Month") +
+ylab("House price £k") +
+guides(colour=guide_legend(title="House price\n decile"))
+
+
+
+```
+Plot changes in house prices in 2015:
+- Here I attempt to plot both with one graph, by highlighting the change in house prices over 2015 for each decile of the house price distribution.
+- The plot is interesting because it shows that that house prices in the higer deciles are more volatile than those in the lower deciles. This may be because houses in higher deciles have more subjective elements of their cost whereas those in lower deciles are based more upon the physical value of the components of the building and the land upon which it is built. Hence higher-end properties are more subject to market shifts. 
+```
