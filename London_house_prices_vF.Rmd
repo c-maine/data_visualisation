@@ -76,7 +76,7 @@ ylab("Price £k") +
 ggtitle("House price by borough") +
 theme(plot.title = element_text(size = 16, face = "bold")) 
 
-https://github.com/c-maine/data_visualisation/blob/master/images/Rplot_1.png
+![alt text](https://github.com/c-maine/data_visualisation/blob/master/images/Rplot_1.png)
 
 ```
 Here I plot the distribution of house prices by borough using a box plot. Key 3 features of this plot are:
