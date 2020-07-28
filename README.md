@@ -6,6 +6,8 @@ This repo contains notebooks with examples of data visualisation projects.
 
 ## 2. [Principal Component Analysis of wine characteristics related to quality](https://github.com/c-maine/data_visualisation/blob/master/WineQualities_PrincipalComponentAnalysis.ipynb)
 
+## 3. [Correspondence Analysis of Women in Work Attitudes Survey data](https://github.com/c-maine/data_visualisation/blob/master/WomenWorking_CorrespondenceAnalysis.ipynb)
+
 ## 3. [London house prices data visualisation notebook](https://github.com/c-maine/data_visualisation/blob/master/London_house_prices_vF.Rmd) 
 contains code to make the following graphs:
 
