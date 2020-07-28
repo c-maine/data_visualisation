@@ -2,7 +2,11 @@
 
 This repo contains notebooks with examples of data visualisation projects.
 
-## 1. [London house prices data visualisation notebook](https://github.com/c-maine/data_visualisation/blob/master/London_house_prices_vF.Rmd) 
+## 1. [Simple GGplot examples](https://github.com/c-maine/data_visualisation/blob/master/ggplot_simple_examples.ipynb) 
+
+## 2. [Principal Component Analysis of wine characteristics related to quality](https://github.com/c-maine/data_visualisation/blob/master/WineQualities_PrincipalComponentAnalysis.ipynb)
+
+## 3. [London house prices data visualisation notebook](https://github.com/c-maine/data_visualisation/blob/master/London_house_prices_vF.Rmd) 
 contains code to make the following graphs:
 
 ### Variations in London house prices by borough
@@ -23,6 +27,4 @@ contains code to make the following graphs:
 
 ![alt text](https://github.com/c-maine/data_visualisation/blob/master/images/Rplot_5.png)
 
-## 2. [Simple GGplot examples](https://github.com/c-maine/data_visualisation/blob/master/ggplot_simple_examples.ipynb) 
 
-## 3. [Principal Component Analysis of wine characteristics related to quality](https://github.com/c-maine/data_visualisation/blob/master/WineQualities_PrincipalComponentAnalysis.ipynb)
