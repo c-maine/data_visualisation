@@ -8,7 +8,7 @@ This repo contains notebooks with examples of data visualisation projects.
 
 ## 3. [Correspondence Analysis of Women in Work Attitudes Survey data](https://github.com/c-maine/data_visualisation/blob/master/WomenWorking_CorrespondenceAnalysis.ipynb)
 
-## 4. [Prinicipal Component Analysis of U.S. State characteristics associated with higher incidences of CoVid 19](https://github.com/c-maine/data_visualisation/blob/master/Covid19Spread_PrincipalComponentAnalysis.ipynb)
+## 4. [Principal Component Analysis of U.S. State characteristics associated with higher incidences of CoVid 19](https://github.com/c-maine/data_visualisation/blob/master/Covid19Spread_PrincipalComponentAnalysis.ipynb)
 
 ## 5. [London house prices data visualisation notebook](https://github.com/c-maine/data_visualisation/blob/master/London_house_prices_vF.Rmd) 
 contains code to make the following graphs:
